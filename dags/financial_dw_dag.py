@@ -12,10 +12,13 @@ Agendamento: De segunda a sexta-feira às 21:00 BRT (pós-fechamento dos mercado
 import os
 from datetime import datetime, timedelta
 from airflow import DAG
-from airflow.operators.bash import BashOperator
+try:
+    from airflow.providers.standard.operators.bash import BashOperator
+except ImportError:
+    from airflow.operators.bash import BashOperator
 
-# Diretório raiz do projeto no ambiente Linux/WSL
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Diretório absoluto do projeto
+PROJECT_DIR = "/home/ericl/projetos/financial-etl-pipeline"
 VENV_PYTHON = os.path.join(PROJECT_DIR, ".venv", "bin", "python3")
 
 # Configurações padrão da DAG (Resiliência & Retry Policy)
@@ -24,8 +27,8 @@ default_args = {
     "depends_on_past": False,
     "email_on_failure": False,
     "email_on_retry": False,
-    "retries": 2,                             # Se falhar (ex: queda da API yfinance), tenta 2 vezes
-    "retry_delay": timedelta(minutes=5),      # Aguarda 5 minutos entre as tentativas
+    "retries": 1,                             # Tenta 1 vez em caso de falha
+    "retry_delay": timedelta(seconds=10),     # Aguarda 10 segundos entre as tentativas
     "start_date": datetime(2026, 1, 1),
 }
 
@@ -33,7 +36,7 @@ with DAG(
     dag_id="financial_etl_pipeline_dw",
     default_args=default_args,
     description="Pipeline ETL de Cotações Financeiras (yfinance -> Pandas -> Supabase DW)",
-    schedule_interval="0 21 * * 1-5",         # Cron: 21:00 de Segunda a Sexta
+    schedule="0 21 * * 1-5",                  # Cron: 21:00 de Segunda a Sexta
     catchup=False,                            # Não executa datas passadas retroativamente
     tags=["finance", "etl", "supabase", "medallion"],
 ) as dag:
