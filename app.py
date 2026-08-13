@@ -55,7 +55,7 @@ def load_data():
             query = """
                 SELECT 
                     d.ticker_code,
-                    c.date,
+                    c.full_date AS date,
                     f.open_price,
                     f.high_price,
                     f.low_price,
@@ -64,9 +64,9 @@ def load_data():
                     d.company_name,
                     d.sector
                 FROM fact_stock_prices f
-                JOIN dim_tickers d ON f.ticker_key = d.ticker_key
-                JOIN dim_calendar c ON f.date_key = c.date_key
-                ORDER BY d.ticker_code, c.date ASC;
+                JOIN dim_ticker d ON f.ticker_key = d.ticker_key
+                JOIN dim_date c ON f.date_key = c.date_key
+                ORDER BY d.ticker_code, c.full_date ASC;
             """
             df = pd.read_sql(query, con=engine)
             if not df.empty:
