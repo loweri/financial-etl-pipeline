@@ -54,8 +54,8 @@ def load_data():
             engine = create_engine(SUPABASE_DB_URL)
             query = """
                 SELECT 
-                    f.ticker_code,
-                    f.date,
+                    d.ticker_code,
+                    c.date,
                     f.open_price,
                     f.high_price,
                     f.low_price,
@@ -64,8 +64,9 @@ def load_data():
                     d.company_name,
                     d.sector
                 FROM fact_stock_prices f
-                LEFT JOIN dim_tickers d ON f.ticker_code = d.ticker_code
-                ORDER BY f.ticker_code, f.date ASC;
+                JOIN dim_tickers d ON f.ticker_key = d.ticker_key
+                JOIN dim_calendar c ON f.date_key = c.date_key
+                ORDER BY d.ticker_code, c.date ASC;
             """
             df = pd.read_sql(query, con=engine)
             if not df.empty:
