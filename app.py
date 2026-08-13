@@ -15,9 +15,14 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 2. Carregar variáveis de ambiente
+# 2. Carregar variáveis de ambiente e segredos do Streamlit Cloud
 load_dotenv()
 SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL")
+if not SUPABASE_DB_URL:
+    try:
+        SUPABASE_DB_URL = st.secrets.get("SUPABASE_DB_URL")
+    except Exception:
+        pass
 
 # CSS personalizado para visual moderno e limpo
 st.markdown("""
