@@ -1,22 +1,45 @@
-# 📊 Financial ETL Pipeline — End-to-End Data Engineering & Data Warehouse
-*(Bilingual README: [Português](#-português) | [English](#-english))*
+# 📊 Financial ETL Pipeline & Data Warehouse — Analytics Dashboard
+
+![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-150458?logo=pandas&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-336791?logo=postgresql&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?logo=apacheairflow&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
+![Plotly](https://img.shields.io/badge/Plotly-3F4F75?logo=plotly&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+*(Bilingual Documentation: [Português](#-português) | [English](#-english))*
 
 ---
 
 ## 🇧🇷 Português
 
-Pipeline de Engenharia de Dados completa de ponta a ponta (End-to-End) para extrair dados históricos do mercado financeiro via API `yfinance`, aplicar indicadores técnicos utilizando **Pandas**, estruturar o Data Warehouse na nuvem (**Supabase / PostgreSQL**) em **Star Schema Kimball**, e orquestrar o fluxo de trabalho com **Apache Airflow (DAG)**.
+Pipeline de Engenharia de Dados completa de ponta a ponta (End-to-End) para extrair dados históricos do mercado financeiro (**B3 e Nasdaq**) via API `yfinance`, aplicar indicadores técnicos utilizando **Pandas**, estruturar o Data Warehouse na nuvem (**Supabase / PostgreSQL**) em **Star Schema Kimball**, orquestrar o fluxo com **Apache Airflow 3**, e disponibilizar um **Dashboard Analítico Interativo em Streamlit com Plotly**.
 
-### 🏗️ Arquitetura Completa da Pipeline (Medallion & Cloud DW)
+---
+
+### 🖥️ Dashboard Interativo (Streamlit & Plotly)
+
+<p align="center">
+  <img src="docs/streamlit_dashboard.png" alt="Financial Data Warehouse Analytics Dashboard" width="100%">
+</p>
+
+- **Cards de Métricas KPI:** Último Fechamento, Variação no Período %, Preço Máximo, Mínimo e Volume Médio Diário.
+- **Gráficos Interativos:** Evolução de preços com Médias Móveis de 21 e 50 dias (SMA), além de visualização técnica de Candlestick (velas).
+- **Conexão Híbrida Inteligente:** Consulta direta e veloz ao Supabase PostgreSQL via Star Schema com fallback automático para dados locais processados.
+
+---
+
+### 🏗️ Arquitetura Completa da Pipeline (Medallion, Cloud DW & Analytics)
 
 ```mermaid
 flowchart TD
-    subgraph Orquestracao ["⚡ Orquestração (Apache Airflow)"]
+    subgraph Orquestracao ["⚡ Orquestração (Apache Airflow 3)"]
         DAG["dags/financial_dw_dag.py\n(Cron: 21:00 Seg-Sex)"]
     end
 
     subgraph Ingestao ["1. Camada de Ingestão (Bronze)"]
-        API["API yfinance\n(Yahoo Finance)"]
+        API["API yfinance\n(B3 & Nasdaq)"]
         PY_EXT["src/extract.py"]
         RAW["data/raw/\n(*_raw.csv)"]
         API --> PY_EXT
@@ -44,11 +67,13 @@ flowchart TD
         PY_LOAD -->|Grava Telemetria| DW_LOG
     end
 
-    subgraph Consumo ["4. Consumo & Analytics"]
+    subgraph Consumo ["4. Consumo & Analytics (Streamlit App)"]
+        APP["app.py\n(Streamlit + Plotly)"]
         SQL_ANALYTICS["queries/analytical_queries.sql\n(Golden Cross & Rentabilidade)"]
-        BI["Power BI / Streamlit / SQL Editor"]
+        DW_FACT --> APP
+        DW_DIM_T --> APP
+        DW_DIM_D --> APP
         DW_FACT --> SQL_ANALYTICS
-        SQL_ANALYTICS --> BI
     end
 
     DAG -.->|Executa Task 1| PY_EXT
@@ -58,14 +83,15 @@ flowchart TD
 
 ---
 
-### 🌟 Destaques do Projeto
+### 🌟 Destaques de Engenharia
 
 - **Arquitetura Medalhão:** Separação estrita de responsabilidade entre Bronze (dados brutos auditáveis), Silver (transformados com indicadores) e Gold (Star Schema dimensional).
-- **Data Warehouse na Nuvem (PostgreSQL):** Hospedado no Supabase (SP), otimizado com conexões via **Connection Pooler** e `SQLAlchemy`.
-- **Modelagem Dimensional (Kimball):** Implementação de `dim_ticker` (com SCD Tipo 2 para histórico de dados), `dim_date` (para análises de calendários/dias úteis) e `fact_stock_prices` (tabela fato analítica com chaves estrangeiras).
-- **Carga Idempotente (UPSERT):** O script `src/load.py` garante que a esteira pode ser reexecutada N vezes sem duplicar registros no banco (`ON CONFLICT DO UPDATE`).
+- **Data Warehouse na Nuvem (PostgreSQL):** Hospedado no Supabase, otimizado com conexões via **Connection Pooler** e `SQLAlchemy`.
+- **Modelagem Dimensional (Kimball):** Implementação de `dim_ticker` (com SCD Tipo 2), `dim_date` (inteligência temporal) e `fact_stock_prices` (tabela fato analítica com chaves substitutas/surrogate keys).
+- **Carga Idempotente (UPSERT):** O script `src/load.py` garante que a esteira pode ser reexecutada N vezes sem duplicar registros no banco (`ON CONFLICT (ticker_key, date_key) DO UPDATE`).
 - **Observabilidade & Auditoria:** Gravação automática de logs na `dw_audit_log` para monitorar duração, linhas processadas, nulos e status (`SUCCESS`/`FAILED`).
-- **Orquestração (Apache Airflow):** DAG declarativa (`dags/financial_dw_dag.py`) com políticas de *retry* automático e agendamento pós-fechamento de mercado (21h BRT).
+- **Orquestração (Apache Airflow 3):** DAG declarativa com políticas de *retry* automático e agendamento pós-fechamento de mercado (21h BRT).
+- **Data App Interativo (Streamlit):** Interface analítica para exploração visual em tempo real com filtros por ativo e período.
 
 ---
 
@@ -73,10 +99,11 @@ flowchart TD
 
 ```text
 financial-etl-pipeline/
-├── .venv/                   # Ambiente Virtual Local (Ignorado pelo Git)
 ├── .env.example             # Modelo seguro de variáveis de ambiente
-├── .gitignore               # Regras de segurança e versionamento
-├── README.md                # Documentação completa do projeto
+├── .gitignore               # Regras de versionamento e segurança
+├── README.md                # Documentação oficial do projeto
+├── requirements.txt         # Dependências do projeto (ETL + Streamlit)
+├── app.py                   # Dashboard interativo em Streamlit & Plotly
 │
 ├── dags/
 │   └── financial_dw_dag.py  # Orquestração da pipeline no Apache Airflow
@@ -89,6 +116,9 @@ financial-etl-pipeline/
 ├── queries/
 │   └── analytical_queries.sql # Queries SQL de negócio (Golden Cross, Rentabilidade)
 │
+├── docs/
+│   └── streamlit_dashboard.png # Imagens e diagramas do projeto
+│
 └── data/
     ├── raw/                 # Camada Bronze: Arquivos CSV brutos
     └── processed/           # Camada Silver: CSVs transformados com indicadores
@@ -98,8 +128,8 @@ financial-etl-pipeline/
 
 ### ⚡ Ativos Monitorados
 
-- **B3 (Brasil):** `PETR4.SA`, `VALE3.SA`, `ITUB4.SA`
-- **Mercado Americano:** `AAPL`, `NVDA`, `TSLA`
+- 🇧🇷 **B3 (Brasil):** `PETR4.SA` (Petrobras), `VALE3.SA` (Vale), `ITUB4.SA` (Itaú)
+- 🇺🇸 **Nasdaq (EUA):** `AAPL` (Apple), `NVDA` (NVIDIA), `TSLA` (Tesla)
 
 ---
 
@@ -115,7 +145,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # 3. Instalar Dependências
-pip install yfinance pandas sqlalchemy psycopg2-binary python-dotenv
+pip install -r requirements.txt
 
 # 4. Configurar as Variáveis de Ambiente
 cp .env.example .env
@@ -125,63 +155,38 @@ cp .env.example .env
 python3 src/extract.py
 python3 src/transform.py
 python3 src/load.py
+
+# 6. Inicializar o Dashboard Interativo
+streamlit run app.py
 ```
+
+Abra `http://localhost:8501` no navegador.
 
 ---
 
 ## 🇺🇸 English
 
-End-to-End Data Engineering pipeline designed to extract historical stock market data via `yfinance`, compute technical indicators with **Pandas**, model a cloud Data Warehouse (**Supabase / PostgreSQL**) following **Kimball's Star Schema**, and orchestrate the workflow using **Apache Airflow (DAG)**.
+End-to-End Data Engineering and Analytics pipeline designed to extract historical market data (**B3 and Nasdaq**) via `yfinance`, compute technical indicators with **Pandas**, model a cloud Data Warehouse (**Supabase / PostgreSQL**) following **Kimball's Star Schema**, orchestrate workflows with **Apache Airflow 3**, and serve an **Interactive Analytics Dashboard with Streamlit and Plotly**.
 
-### 🏗️ Pipeline Architecture
+### 🖥️ Interactive Dashboard (Streamlit & Plotly)
 
-```mermaid
-flowchart TD
-    subgraph Orchestration ["⚡ Orchestration (Apache Airflow)"]
-        DAG_EN["dags/financial_dw_dag.py\n(Cron: 21:00 Mon-Fri)"]
-    end
-
-    subgraph Ingestion ["1. Ingestion Layer (Bronze)"]
-        API_EN["yfinance API"]
-        PY_EXT_EN["src/extract.py"]
-        RAW_EN["data/raw/\n(*_raw.csv)"]
-        API_EN --> PY_EXT_EN
-        PY_EXT_EN --> RAW_EN
-    end
-
-    subgraph Silver_EN ["2. Silver Layer (Processed)"]
-        PY_TRF_EN["src/transform.py"]
-        PROC_EN["data/processed/\n(*_processed.csv)"]
-        RAW_EN --> PY_TRF_EN
-        PY_TRF_EN --> PROC_EN
-    end
-
-    subgraph Gold_EN ["3. Gold Layer & Data Warehouse"]
-        PY_LOAD_EN["src/load.py"]
-        DW_FACT_EN["fact_stock_prices"]
-        DW_LOG_EN["dw_audit_log"]
-        PROC_EN --> PY_LOAD_EN
-        PY_LOAD_EN -->|Idempotent UPSERT| DW_FACT_EN
-        PY_LOAD_EN -->|Telemetry Logs| DW_LOG_EN
-    end
-
-    DAG_EN -.-> PY_EXT_EN
-    DAG_EN -.-> PY_TRF_EN
-    DAG_EN -.-> PY_LOAD_EN
-```
+- **KPI Cards:** Latest Close Price, Period Return (%), High, Low, and Daily Average Volume.
+- **Interactive Technical Charts:** Line charts with 21-day and 50-day Simple Moving Averages (SMA) plus Candlestick trading charts.
+- **Hybrid Data Connection:** Direct queries to Supabase Cloud DW with automatic local fallback.
 
 ### 🌟 Key Features
 
 - **Medallion Architecture:** Bronze (raw auditability), Silver (computed indicators), Gold (Dimensional DW).
 - **Cloud Data Warehouse (PostgreSQL):** Hosted on Supabase, connected via **Connection Pooler** & `SQLAlchemy`.
 - **Dimensional Modeling (Kimball):** `dim_ticker` (SCD Type 2), `dim_date` (Calendar), and `fact_stock_prices`.
-- **Idempotent Load (UPSERT):** `src/load.py` uses `ON CONFLICT DO UPDATE` to prevent duplicate records upon re-execution.
+- **Idempotent Load (UPSERT):** `src/load.py` uses `ON CONFLICT (ticker_key, date_key) DO UPDATE` to prevent duplicates.
 - **Observability:** Pipeline execution telemetry logged into `dw_audit_log`.
-- **Orchestration:** Declarative Airflow DAG (`dags/financial_dw_dag.py`) scheduled for market close (21:00 BRT).
+- **Orchestration:** Declarative Apache Airflow DAG scheduled for market close (21:00 BRT).
+- **Data Application:** Streamlit web interface with Plotly charting and dynamic date filters.
 
 ---
 
 ## 👨‍💻 Author / Autor
 
-**Ericles (loweri)** — *Data Engineer*  
+**Ericles Fernandes Oliveira** — *Data Engineer*  
 GitHub: [loweri](https://github.com/loweri) | LinkedIn: [ericlesoliveira](https://www.linkedin.com/in/ericlesoliveira/)
