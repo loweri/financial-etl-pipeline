@@ -12,6 +12,22 @@
 
 ---
 
+## 🏗️ Architecture Blueprint / Diagrama de Arquitetura
+
+<p align="center">
+  <img src="docs/architecture_blueprint.png" alt="Financial ETL Pipeline Architecture Blueprint" width="100%">
+</p>
+
+---
+
+## 📋 Pré-Requisitos / Prerequisites
+
+- **Python >= 3.12**
+- **Conta no Supabase / PostgreSQL** (Gratuita - credenciais documentadas no `.env.example`)
+- **Apache Airflow 3.x** (Opcional para orquestração diária agendada)
+
+---
+
 ## 🇧🇷 Português
 
 Pipeline de Engenharia de Dados completa de ponta a ponta (End-to-End) para extrair dados históricos do mercado financeiro (**B3 e Nasdaq**) via API `yfinance`, aplicar indicadores técnicos utilizando **Pandas**, estruturar o Data Warehouse na nuvem (**Supabase / PostgreSQL**) em **Star Schema Kimball**, orquestrar o fluxo com **Apache Airflow 3**, e disponibilizar um **Dashboard Analítico Interativo em Streamlit com Plotly**.
