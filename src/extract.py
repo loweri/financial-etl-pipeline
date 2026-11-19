@@ -5,7 +5,7 @@ print("🚀 Iniciando extração da lista de ativos...")
 for ticker in TICKERS:
     print(f"📦 Extraindo dados de {ticker}...")
     obj = yf.Ticker(ticker)
-    df = obj.history(period="1y")
+    df = obj.history(period="2y")
     
     if not df.empty:
         # Salva o arquivo CSV bruto na pasta data/raw
