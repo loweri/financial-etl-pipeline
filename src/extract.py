@@ -2,6 +2,7 @@ import yfinance as yf
 import os
 TICKERS = ["PETR4.SA", "VALE3.SA", "ITUB4.SA", "AAPL", "NVDA", "TSLA"]
 print("🚀 Iniciando extração da lista de ativos...")
+os.makedirs("data/raw", exist_ok=True)
 for ticker in TICKERS:
     print(f"📦 Extraindo dados de {ticker}...")
     obj = yf.Ticker(ticker)
