@@ -5,6 +5,7 @@ import os
 print("🧪 Iniciando transformação e cálculo de indicadores...")
 
 # Pega todos os arquivos CSV na pasta data/raw
+os.makedirs("data/raw", exist_ok=True)
 arquivos_raw = glob.glob("data/raw/*_raw.csv")
 
 for caminho_arquivo in arquivos_raw:
