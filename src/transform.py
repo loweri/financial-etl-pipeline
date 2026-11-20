@@ -6,7 +6,7 @@ print("🧪 Iniciando transformação e cálculo de indicadores...")
 
 # Pega todos os arquivos CSV na pasta data/raw
 arquivos_raw = glob.glob("data/raw/*_raw.csv")
-
+os.makedirs("data/processed", exist_ok=True)
 for caminho_arquivo in arquivos_raw:
     nome_arquivo = os.path.basename(caminho_arquivo)
     ticker = nome_arquivo.replace("_raw.csv", "")
