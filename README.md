@@ -41,7 +41,7 @@ Pipeline de Engenharia de Dados completa de ponta a ponta (End-to-End) para extr
 </p>
 
 - **Cards de Métricas KPI:** Último Fechamento, Variação no Período %, Preço Máximo, Mínimo e Volume Médio Diário.
-- **Gráficos Interativos:** Evolução de preços com Médias Móveis de 21 e 50 dias (SMA), além de visualização técnica de Candlestick (velas).
+- **Gráficos Interativos:** Evolução de preços com Médias Móveis de 21 e 200 dias (SMA), além de visualização técnica de Candlestick (velas).
 - **Conexão Híbrida Inteligente:** Consulta direta e veloz ao Supabase PostgreSQL via Star Schema com fallback automático para dados locais processados.
 
 ---
@@ -179,6 +179,24 @@ streamlit run app.py
 Abra `http://localhost:8501` no navegador.
 
 ---
+## ⚠️ Limitações conhecidas
+
+Este projeto é funcional no volume atual, mas tem pontos que não escalariam
+em produção. Documentados aqui de propósito.
+
+**Carga linha a linha.** O `load.py` executa dois comandos por registro,
+dentro de um laço — cerca de 6 mil idas ao banco para 3 mil linhas de
+cotação. O gargalo é latência de rede, não processamento. A correção seria
+carga em lote.
+
+**`dim_date` reinserida a cada linha.** São 1.501 inserts para 257 datas
+distintas; o excedente é descartado pelo `ON CONFLICT`. A dimensão de tempo
+deveria ser carregada uma vez, fora do laço.
+
+**SCD Tipo 2 não implementado.** A `dim_ticker` tem as colunas de
+versionamento (`valid_from`, `is_current`), mas a carga usa
+`ON CONFLICT DO NOTHING` e nunca fecha a versão anterior. Na prática, o
+primeiro valor gravado permanece.
 
 ## 🇺🇸 English
 
@@ -187,7 +205,7 @@ End-to-End Data Engineering and Analytics pipeline designed to extract historica
 ### 🖥️ Interactive Dashboard (Streamlit & Plotly)
 
 - **KPI Cards:** Latest Close Price, Period Return (%), High, Low, and Daily Average Volume.
-- **Interactive Technical Charts:** Line charts with 21-day and 50-day Simple Moving Averages (SMA) plus Candlestick trading charts.
+- **Interactive Technical Charts:** Line charts with 21-day and 200-day Simple Moving Averages (SMA) plus Candlestick trading charts.
 - **Hybrid Data Connection:** Direct queries to Supabase Cloud DW with automatic local fallback.
 
 ### 🌟 Key Features
@@ -200,6 +218,23 @@ End-to-End Data Engineering and Analytics pipeline designed to extract historica
 - **Orchestration:** Declarative Apache Airflow DAG scheduled for market close (21:00 BRT).
 - **Data Application:** Streamlit web interface with Plotly charting and dynamic date filters.
 
+## ⚠️ Known Limitations
+
+This project works at the current volume, but has points that would not
+scale in production. Documented here on purpose.
+
+**Row-by-row load.** `load.py` executes two statements per record inside a
+loop — roughly 6,000 round trips to the database for 3,000 price rows. The
+bottleneck is network latency, not processing. The fix would be bulk loading.
+
+**`dim_date` reinserted on every row.** 1,501 inserts for 257 distinct dates;
+the excess is discarded by `ON CONFLICT`. The time dimension should be loaded
+once, outside the loop.
+
+**SCD Type 2 not implemented.** `dim_ticker` has the versioning columns
+(`valid_from`, `is_current`), but the load uses `ON CONFLICT DO NOTHING` and
+never closes the previous version. In practice, the first value written
+persists.
 ---
 
 ## 👨‍💻 Author / Autor
