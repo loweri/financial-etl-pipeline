@@ -71,14 +71,14 @@ flowchart TD
 
     subgraph Gold ["3. Camada Gold & Data Warehouse (Supabase)"]
         PY_LOAD["src/load.py\n(SQLAlchemy / Pooler)"]
-        DW_DIM_T["dim_ticker\n(SCD Tipo 2)"]
+        DW_DIM_T["dim_ticker\n(estrutura SCD Tipo 2)"]
         DW_DIM_D["dim_date\n(Calendário)"]
         DW_FACT["fact_stock_prices\n(Fato Cotações)"]
         DW_LOG["dw_audit_log\n(Observabilidade)"]
 
         PROC --> PY_LOAD
-        PY_LOAD -->|Carga Idempotente UPSERT| DW_DIM_T
-        PY_LOAD -->|Carga Idempotente UPSERT| DW_DIM_D
+        PY_LOAD -->|Insere se nao existir| DW_DIM_T
+        PY_LOAD -->|Insere se nao existir| DW_DIM_D
         PY_LOAD -->|Carga Idempotente UPSERT| DW_FACT
         PY_LOAD -->|Grava Telemetria| DW_LOG
     end
@@ -103,7 +103,7 @@ flowchart TD
 
 - **Arquitetura Medalhão:** Separação estrita de responsabilidade entre Bronze (dados brutos auditáveis), Silver (transformados com indicadores) e Gold (Star Schema dimensional).
 - **Data Warehouse na Nuvem (PostgreSQL):** Hospedado no Supabase, otimizado com conexões via **Connection Pooler** e `SQLAlchemy`.
-- **Modelagem Dimensional (Kimball):** Implementação de `dim_ticker` (com SCD Tipo 2), `dim_date` (inteligência temporal) e `fact_stock_prices` (tabela fato analítica com chaves substitutas/surrogate keys).
+- **Modelagem Dimensional (Kimball):** Implementação de `dim_ticker` (estrutura preparada para SCD Tipo 2), `dim_date` (inteligência temporal) e `fact_stock_prices` (tabela fato analítica com chaves substitutas/surrogate keys).
 - **Carga Idempotente (UPSERT):** O script `src/load.py` garante que a esteira pode ser reexecutada N vezes sem duplicar registros no banco (`ON CONFLICT (ticker_key, date_key) DO UPDATE`).
 - **Observabilidade & Auditoria:** Gravação automática de logs na `dw_audit_log` para monitorar duração, linhas processadas, nulos e status (`SUCCESS`/`FAILED`).
 - **Orquestração (Apache Airflow 3):** DAG declarativa com políticas de *retry* automático e agendamento pós-fechamento de mercado (21h BRT).
@@ -212,7 +212,7 @@ End-to-End Data Engineering and Analytics pipeline designed to extract historica
 
 - **Medallion Architecture:** Bronze (raw auditability), Silver (computed indicators), Gold (Dimensional DW).
 - **Cloud Data Warehouse (PostgreSQL):** Hosted on Supabase, connected via **Connection Pooler** & `SQLAlchemy`.
-- **Dimensional Modeling (Kimball):** `dim_ticker` (SCD Type 2), `dim_date` (Calendar), and `fact_stock_prices`.
+- **Dimensional Modeling (Kimball):** `dim_ticker` (SCD Type 2 structure), `dim_date` (Calendar), and `fact_stock_prices`.
 - **Idempotent Load (UPSERT):** `src/load.py` uses `ON CONFLICT (ticker_key, date_key) DO UPDATE` to prevent duplicates.
 - **Observability:** Pipeline execution telemetry logged into `dw_audit_log`.
 - **Orchestration:** Declarative Apache Airflow DAG scheduled for market close (21:00 BRT).
